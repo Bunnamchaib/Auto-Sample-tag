@@ -948,9 +948,25 @@
          * @param {object} data - The data object to encode.
          */
         function generateQRCode(elementId, data) {
-            const qrcodeDiv = document.getElementById(elementId);
-            if (qrcodeDiv && currentTagData.includeQrCode) { // Only generate if option is enabled
-                qrcodeDiv.innerHTML = ''; // Clear previous QR code
+            const qrcodeContainerDiv = document.getElementById(elementId);
+            if (qrcodeContainerDiv && data.includeQrCode) { // Only generate if option is enabled
+                console.log(`[QR Debug] Attempting to generate QR for container: ${elementId}`);
+                if (typeof QRCode === 'undefined') {
+                    console.error("[QR Debug] QRCode library is not loaded!");
+                    return;
+                }
+
+                // Ensure the container is visible
+                qrcodeContainerDiv.style.display = 'flex';
+                qrcodeContainerDiv.innerHTML = ''; // Clear previous content
+
+                // Create a canvas element inside the container
+                const canvasElement = document.createElement('canvas');
+                canvasElement.id = `canvas-${elementId}`; // Unique ID for the canvas
+                canvasElement.width = 50; // Set canvas dimensions
+                canvasElement.height = 50;
+                qrcodeContainerDiv.appendChild(canvasElement);
+
                 const dataToEncode = JSON.stringify({
                     tagNo: data.tagNo,
                     sampleDate: data.sampleDate,
@@ -961,18 +977,24 @@
                     notes: data.notes
                 });
 
-                new QRCode(qrcodeDiv, {
-                    text: dataToEncode,
-                    width: 50,  // Adjust size as needed for placement
-                    height: 50,
-                    colorDark : "#000000",
-                    colorLight : "#ffffff",
-                    correctLevel : QRCode.CorrectLevel.H
-                });
-                qrcodeDiv.style.display = 'flex'; // Ensure it's visible
-            } else if (qrcodeDiv) {
-                qrcodeDiv.innerHTML = ''; // Clear if disabled
-                qrcodeDiv.style.display = 'none'; // Hide the container
+                try {
+                    // Pass the canvas element directly to QRCode
+                    new QRCode(canvasElement, { // Changed from qrcodeDiv to canvasElement
+                        text: dataToEncode,
+                        width: 50,
+                        height: 50,
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                    console.log(`[QR Debug] QR code generated successfully on canvas for ${elementId}`);
+                } catch (e) {
+                    console.error(`[QR Debug] Error generating QR code for ${elementId}:`, e);
+                }
+            } else if (qrcodeContainerDiv) {
+                qrcodeContainerDiv.innerHTML = ''; // Clear if disabled
+                qrcodeContainerDiv.style.display = 'none'; // Hide the container
+                console.log(`[QR Debug] QR code generation skipped/hidden for ${elementId}`);
             }
         }
 
@@ -1631,6 +1653,7 @@
 
         // Initial load of history and logo on page load
         document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOMContentLoaded fired. Checking QRCode availability:", typeof QRCode); // Debug log
             loadTagHistory();
             if (currentLogoUrl) {
                 logoPreview.src = currentLogoUrl;

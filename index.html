@@ -7,8 +7,6 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- QR Code Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.0.0/qrcode.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -62,6 +60,12 @@
                 page-break-inside: avoid; /* Prevent breaking tags across pages */
             }
 
+            /* Paper size specific adjustments */
+            @page {
+                size: A4; /* Default to A4, can be changed by user in print dialog */
+                margin: 0; /* Remove default margins */
+            }
+
             /* Hide elements not needed in print */
             .no-print {
                 display: none !important;
@@ -99,7 +103,6 @@
         /* Layout specific styles */
         .layout-1 .tag-container { /* Classic Block */
             border: 1px solid #e5e7eb;
-            position: relative; /* For QR positioning */
         }
         .layout-1 .tag-header, .layout-1 .tag-body {
             border-bottom: 1px solid #e5e7eb;
@@ -116,20 +119,6 @@
             white-space: nowrap;
             text-overflow: ellipsis;
         }
-        .layout-1 .qrcode-container {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            width: 60px; /* Fixed size for QR */
-            height: 60px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: white; /* Ensure QR code is visible on any background */
-            padding: 5px;
-            border-radius: 5px;
-        }
-
 
         .layout-2 .tag-container { /* 2-Column Modern */
             border: 1px solid #e5e7eb;
@@ -137,26 +126,12 @@
             grid-template-columns: 1fr 1fr;
             gap: 10px;
             padding: 15px;
-            position: relative; /* For QR positioning */
         }
         .layout-2 .tag-header { grid-column: span 2; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 10px;}
         .layout-2 .tag-field { display: flex; flex-direction: column; overflow: hidden; }
         .layout-2 .tag-field span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
         .layout-2 .tag-notes { grid-column: span 2; border-top: 1px solid #e5e7eb; padding-top: 10px; margin-top: 10px; overflow: hidden;}
         .layout-2 .tag-notes p { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-        .layout-2 .qrcode-container {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            width: 60px; /* Fixed size for QR */
-            height: 60px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: white;
-            padding: 5px;
-            border-radius: 5px;
-        }
 
 
         .layout-3 .tag-container { /* Card Style (แนวนอน A6) */
@@ -165,7 +140,6 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            position: relative; /* For QR positioning */
         }
         .layout-3 .tag-header {
             display: flex;
@@ -190,19 +164,6 @@
             white-space: nowrap;
             text-overflow: ellipsis;
         }
-        .layout-3 .qrcode-container {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            width: 60px; /* Fixed size for QR */
-            height: 60px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: white;
-            padding: 5px;
-            border-radius: 5px;
-        }
 
 
         .layout-4 .tag-container { /* Clean Minimalist */
@@ -210,7 +171,6 @@
             border: none;
             padding: 0;
             background-color: transparent;
-            position: relative; /* For QR positioning */
         }
         .layout-4 .tag-item {
             margin-bottom: 5px;
@@ -221,26 +181,11 @@
         .layout-4 .tag-item span:first-child {
             font-weight: 600;
         }
-        .layout-4 .qrcode-container {
-            position: absolute;
-            bottom: 0px; /* Adjust as needed */
-            right: 0px; /* Adjust as needed */
-            width: 60px; /* Fixed size for QR */
-            height: 60px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: white;
-            padding: 5px;
-            border-radius: 5px;
-        }
-
 
         .layout-5 .tag-container { /* Categorized */
             background-color: #f0f4f8;
             padding: 15px;
             border: 1px solid #d1d5db;
-            position: relative; /* For QR positioning */
         }
         .layout-5 .category-block {
             background-color: #ffffff;
@@ -266,25 +211,11 @@
         .layout-5 .tag-item span:first-child {
             font-weight: 600;
         }
-        .layout-5 .qrcode-container {
-            margin-top: 15px; /* Space from last category block */
-            width: 70px; /* Slightly larger QR for visibility */
-            height: 70px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: white;
-            padding: 5px;
-            border-radius: 5px;
-            align-self: center; /* Center horizontally */
-        }
-
 
         .layout-6 .tag-container { /* Slim Vertical */
             width: 200px; /* Slimmer default */
             padding: 15px;
             border: 1px solid #e5e7eb;
-            position: relative; /* For QR positioning */
         }
         .layout-6 .tag-header {
             text-align: center;
@@ -312,18 +243,6 @@
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-        }
-        .layout-6 .qrcode-container {
-            margin-top: 10px;
-            width: 60px; /* Fixed size for QR */
-            height: 60px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: white;
-            padding: 5px;
-            border-radius: 5px;
-            align-self: center; /* Center horizontally */
         }
 
 
@@ -617,13 +536,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Include QR Code Option (NEW) -->
-                <div class="md:col-span-2 mt-4 flex items-center">
-                    <input type="checkbox" id="includeQrCode" class="form-checkbox h-5 w-5 text-blue-600 rounded" checked>
-                    <label for="includeQrCode" class="ml-2 text-gray-700 text-sm font-medium">รวม QR Code ในแท็ก</label>
-                </div>
-
             </div>
 
             <div class="flex justify-center gap-4 mt-8">
@@ -682,8 +594,7 @@
             sampleMaker: '',
             notes: '',
             backgroundColor: localStorage.getItem('tagBackgroundColor') || defaultTagColors.backgroundColor,
-            textColor: localStorage.getItem('tagTextColor') || defaultTagColors.textColor,
-            includeQrCode: (localStorage.getItem('includeQrCode') === 'true') // New setting
+            textColor: localStorage.getItem('tagTextColor') || defaultTagColors.textColor
         };
 
         let selectedLayout = 1; // Default layout
@@ -742,8 +653,6 @@
         const fontSizeMediumBtn = document.getElementById('fontSizeMedium');
         const fontSizeLargeBtn = document.getElementById('fontSizeLarge');
         const manualFontSizeInput = document.getElementById('manualFontSizeInput');
-
-        const includeQrCodeCheckbox = document.getElementById('includeQrCode'); // NEW QR checkbox
 
         const tagHistoryList = document.getElementById('tagHistoryList');
         const noHistoryMessage = document.getElementById('noHistoryMessage');
@@ -828,13 +737,6 @@
         }
 
         /**
-         * Saves QR code inclusion setting to local storage.
-         */
-        function saveIncludeQrCodeSetting() {
-            localStorage.setItem('includeQrCode', currentTagData.includeQrCode);
-        }
-
-        /**
          * Switches between different sections of the application.
          * @param {string} sectionId - The ID of the section to show ('form', 'preview', 'print-export').
          */
@@ -851,7 +753,6 @@
                 printExportSection.classList.remove('hidden');
                 updateRecommendedHeights(); // Update recommendations when entering print section
                 updateFontSizeUI(); // Update font size UI state
-                includeQrCodeCheckbox.checked = currentTagData.includeQrCode; // Update QR checkbox state
             }
         }
 
@@ -942,62 +843,6 @@
             }
         }
 
-        /**
-         * Generates a QR code for the given data into the specified element.
-         * @param {string} elementId - The ID of the div element to render the QR code into.
-         * @param {object} data - The data object to encode.
-         */
-        function generateQRCode(elementId, data) {
-            const qrcodeContainerDiv = document.getElementById(elementId);
-            if (qrcodeContainerDiv && data.includeQrCode) { // Only generate if option is enabled
-                console.log(`[QR Debug] Attempting to generate QR for container: ${elementId}`);
-                if (typeof QRCode === 'undefined') {
-                    console.error("[QR Debug] QRCode library is not loaded!");
-                    return;
-                }
-
-                // Ensure the container is visible
-                qrcodeContainerDiv.style.display = 'flex';
-                qrcodeContainerDiv.innerHTML = ''; // Clear previous content
-
-                // Create a canvas element inside the container
-                const canvasElement = document.createElement('canvas');
-                canvasElement.id = `canvas-${elementId}`; // Unique ID for the canvas
-                canvasElement.width = 50; // Set canvas dimensions
-                canvasElement.height = 50;
-                qrcodeContainerDiv.appendChild(canvasElement);
-
-                const dataToEncode = JSON.stringify({
-                    tagNo: data.tagNo,
-                    sampleDate: data.sampleDate,
-                    colorName: data.colorName,
-                    filmType: data.filmType,
-                    topCoat: data.topCoat,
-                    sampleMaker: data.sampleMaker,
-                    notes: data.notes
-                });
-
-                try {
-                    // Pass the canvas element directly to QRCode
-                    new QRCode(canvasElement, { // Changed from qrcodeDiv to canvasElement
-                        text: dataToEncode,
-                        width: 50,
-                        height: 50,
-                        colorDark : "#000000",
-                        colorLight : "#ffffff",
-                        correctLevel : QRCode.CorrectLevel.H
-                    });
-                    console.log(`[QR Debug] QR code generated successfully on canvas for ${elementId}`);
-                } catch (e) {
-                    console.error(`[QR Debug] Error generating QR code for ${elementId}:`, e);
-                }
-            } else if (qrcodeContainerDiv) {
-                qrcodeContainerDiv.innerHTML = ''; // Clear if disabled
-                qrcodeContainerDiv.style.display = 'none'; // Hide the container
-                console.log(`[QR Debug] QR code generation skipped/hidden for ${elementId}`);
-            }
-        }
-
 
         // --- Tag Data Handling ---
 
@@ -1017,8 +862,7 @@
                 sampleMaker: sampleMakerInput.value.trim() || "N/A",
                 notes: notesInput.value.trim() || "",
                 backgroundColor: currentTagData.backgroundColor, // Use current selected color
-                textColor: currentTagData.textColor, // Use current selected color
-                includeQrCode: includeQrCodeCheckbox.checked // Get current QR setting
+                textColor: currentTagData.textColor // Use current selected color
             };
         }
 
@@ -1028,7 +872,7 @@
          */
         function populateFormWithTagData(data) {
             tagNoInput.value = data.tagNo === "N/A" ? "" : data.tagNo;
-            // For date input, we need APAC-MM-DD format
+            // For date input, we need YYYY-MM-DD format
             if (data.sampleDate && data.sampleDate !== "N/A") {
                 const parts = data.sampleDate.split('/');
                 sampleDateInput.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
@@ -1053,8 +897,6 @@
             // Set currentTagData colors (important for history loading)
             currentTagData.backgroundColor = data.backgroundColor || defaultTagColors.backgroundColor;
             currentTagData.textColor = data.textColor || defaultTagColors.textColor;
-            currentTagData.includeQrCode = data.includeQrCode; // Load QR setting
-            includeQrCodeCheckbox.checked = currentTagData.includeQrCode; // Update checkbox
             highlightActivePresetButton(); // Highlight the button for the loaded color
         }
 
@@ -1068,7 +910,6 @@
          */
         function generateTagHtml(data, layout) {
             const logoHtml = data.logoUrl ? `<img src="${data.logoUrl}" alt="Company Logo" class="h-8 max-w-[100px] object-contain rounded-md">` : '';
-            const qrcodeDivId = `qrcode-${data.tagNo}-${Date.now()}`; // Unique ID for each QR code div
 
             let html = '';
             switch (layout) {
@@ -1090,7 +931,6 @@
                                 <p class="mb-1"><strong>ผู้ทำ:</strong> ${data.sampleMaker}</p>
                                 ${data.notes ? `<p class="mt-2"><strong>หมายเหตุ:</strong> ${data.notes}</p>` : ''}
                             </div>
-                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
                         </div>
                     `;
                     break;
@@ -1131,7 +971,6 @@
                                 <p style="font-size: 1em;">${data.notes}</p>
                             </div>
                             ` : ''}
-                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
                         </div>
                     `;
                     break;
@@ -1172,7 +1011,6 @@
                                 </div>
                                 ` : ''}
                             </div>
-                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
                         </div>
                     `;
                     break;
@@ -1206,7 +1044,6 @@
                                 <span class="font-semibold" style="font-size: 1em;">หมายเหตุ:</span> <span style="font-size: 1em;">${data.notes}</span>
                             </div>
                             ` : ''}
-                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
                         </div>
                     `;
                     break;
@@ -1252,7 +1089,6 @@
                                 </div>
                                 ` : ''}
                             </div>
-                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
                         </div>
                     `;
                     break;
@@ -1278,27 +1114,24 @@
                                 <p style="font-size: 1em;"><strong>ผู้ทำแซมเปิ้ล:</strong> ${data.sampleMaker}</p>
                                 ${data.notes ? `<p style="font-size: 1em;"><strong>หมายเหตุ:</strong> ${data.notes}</p>` : ''}
                             </div>
-                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
                         </div>
                     `;
                     break;
                 default:
                     html = `<p class="text-red-500">ไม่พบรูปแบบแท็กที่เลือก</p>`;
             }
-            return { html: html, qrcodeDivId: qrcodeDivId };
+            return html;
         }
 
         /**
          * Renders the current tag data in the preview area with the selected layout.
          */
         function renderTagPreview() {
-            const { html, qrcodeDivId } = generateTagHtml(currentTagData, selectedLayout);
-            tagPreviewArea.innerHTML = html;
+            tagPreviewArea.innerHTML = generateTagHtml(currentTagData, selectedLayout);
             const previewTagElement = tagPreviewArea.querySelector('.tag-container');
             if (previewTagElement) {
                 applyFontSizeToTag(previewTagElement);
                 applyColorsToTag(previewTagElement, currentTagData.backgroundColor, currentTagData.textColor);
-                generateQRCode(qrcodeDivId, currentTagData); // Generate QR code for preview
             }
 
             // Highlight the active layout button
@@ -1320,15 +1153,14 @@
          * @param {number} numTags - Number of tags per page.
          * @param {number} tagWidth - Width of each tag in mm.
          * @param {number} tagHeight - Height of each tag in mm.
-         * @returns {Array<HTMLElement>} Array of HTML elements for print/preview.
+         * @returns {string} HTML string containing all tags for print/preview.
          */
-        function generatePrintableTagElements(tagData, layout, numTags, tagWidth, tagHeight) {
-            const tagElements = [];
+        function generatePrintAreaContent(tagData, layout, numTags, tagWidth, tagHeight) {
+            let contentHtml = '';
             for (let i = 0; i < numTags; i++) {
-                const { html, qrcodeDivId } = generateTagHtml(tagData, layout);
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = html;
-                const innerTag = tempDiv.firstElementChild; // Get the .tag-container div
+                const tagDiv = document.createElement('div');
+                tagDiv.innerHTML = generateTagHtml(tagData, layout);
+                const innerTag = tagDiv.firstElementChild; // Get the .tag-container div
 
                 if (innerTag) {
                     innerTag.style.width = `${tagWidth}mm`;
@@ -1339,10 +1171,10 @@
                     innerTag.style.overflow = 'hidden'; // Prevent content overflow
                     applyFontSizeToTag(innerTag); // Apply font size to each print tag
                     applyColorsToTag(innerTag, tagData.backgroundColor, tagData.textColor); // Apply colors for print
-                    tagElements.push({ element: innerTag, qrcodeDivId: qrcodeDivId, data: tagData });
+                    contentHtml += innerTag.outerHTML; // Get the full HTML of the rendered tag
                 }
             }
-            return tagElements;
+            return contentHtml;
         }
 
         /**
@@ -1353,16 +1185,10 @@
             const tagWidth = parseInt(tagWidthInput.value);
             const tagHeight = parseInt(tagHeightInput.value);
 
-            const printableTags = generatePrintableTagElements(currentTagData, selectedLayout, numTags, tagWidth, tagHeight);
+            const printContent = generatePrintAreaContent(currentTagData, selectedLayout, numTags, tagWidth, tagHeight);
 
             const printArea = document.getElementById('print-area');
-            printArea.innerHTML = ''; // Clear previous content
-
-            printableTags.forEach(item => {
-                printArea.appendChild(item.element);
-                // Generate QR code after element is appended to DOM
-                generateQRCode(item.qrcodeDivId, item.data);
-            });
+            printArea.innerHTML = printContent; // Set content to the hidden print area
 
             // Show print area temporarily for printing
             printArea.classList.remove('hidden');
@@ -1380,14 +1206,8 @@
             const tagWidth = parseInt(tagWidthInput.value);
             const tagHeight = parseInt(tagHeightInput.value);
 
-            const previewTags = generatePrintableTagElements(currentTagData, selectedLayout, numTags, tagWidth, tagHeight);
-            printPreviewModalContent.innerHTML = ''; // Clear previous content
-
-            previewTags.forEach(item => {
-                printPreviewModalContent.appendChild(item.element);
-                // Generate QR code after element is appended to DOM
-                generateQRCode(item.qrcodeDivId, item.data);
-            });
+            const previewContent = generatePrintAreaContent(currentTagData, selectedLayout, numTags, tagWidth, tagHeight);
+            printPreviewModalContent.innerHTML = previewContent;
 
             printPreviewModalOverlay.style.display = 'flex'; // Show the modal
         }
@@ -1585,13 +1405,6 @@
             });
         });
 
-        // --- QR Code Option Listener (NEW) ---
-        includeQrCodeCheckbox.addEventListener('change', () => {
-            currentTagData.includeQrCode = includeQrCodeCheckbox.checked;
-            saveIncludeQrCodeSetting();
-            renderTagPreview(); // Re-render preview to show/hide QR
-        });
-
 
         // --- History Management ---
 
@@ -1653,7 +1466,6 @@
 
         // Initial load of history and logo on page load
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("DOMContentLoaded fired. Checking QRCode availability:", typeof QRCode); // Debug log
             loadTagHistory();
             if (currentLogoUrl) {
                 logoPreview.src = currentLogoUrl;
@@ -1664,7 +1476,6 @@
             updateRecommendedHeights(); // Initial call to set recommended heights
             updateFontSizeUI(); // Initial call to set font size UI state
             highlightActivePresetButton(); // Highlight default/saved preset
-            includeQrCodeCheckbox.checked = currentTagData.includeQrCode; // Set initial QR checkbox state
         });
 
     </script>

@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมสร้างแท็ก Sample (Tag Manager)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Print specific styles */
+        @media print {
+            body * {
+                visibility: hidden; /* Hide everything by default */
+            }
+            #print-area, #print-area * {
+                visibility: visible; /* Show only print area */
+            }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: auto; /* Adjust height based on content */
+                display: flex;
+                flex-wrap: wrap; /* Allow multiple tags to wrap */
+                justify-content: center; /* Center tags on page */
+                align-items: flex-start;
+                padding: 10mm; /* Padding for print margins */
+                box-sizing: border-box;
+                overflow: hidden; /* Prevent scrollbars in print */
+            }
+
+            /* Adjust tag size for printing */
+            .tag-container {
+                border: 1px solid #ccc; /* Add border for print visibility */
+                margin: 5mm; /* Spacing between tags */
+                box-shadow: none; /* No shadow in print */
+                page-break-inside: avoid; /* Prevent breaking tags across pages */
+            }
+
+            /* Hide elements not needed in print */
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        /* Tag preview styles */
+        .tag-preview-container {
+            min-height: 200px; /* Ensure some height for visibility */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px dashed #d1d5db;
+        }
+
+        .tag-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 300px; /* Default width, can be overridden */
+            height: auto; /* Default height, can be overridden */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden; /* Ensure content stays within bounds */
+            /* Default base font size for scaling */
+            font-size: 14px; /* This will be overridden by JS */
+        }
+
+        /* Layout specific styles */
+        .layout-1 .tag-container { /* Classic Block */
+            border: 1px solid #e5e7eb;
+            position: relative; /* For QR positioning */
+        }
+        .layout-1 .tag-header, .layout-1 .tag-body {
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .layout-1 .tag-header:last-child, .layout-1 .tag-body:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .layout-1 p, .layout-1 span {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .layout-1 .qrcode-container {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 60px; /* Fixed size for QR */
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white; /* Ensure QR code is visible on any background */
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+
+        .layout-2 .tag-container { /* 2-Column Modern */
+            border: 1px solid #e5e7eb;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 15px;
+            position: relative; /* For QR positioning */
+        }
+        .layout-2 .tag-header { grid-column: span 2; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 10px;}
+        .layout-2 .tag-field { display: flex; flex-direction: column; overflow: hidden; }
+        .layout-2 .tag-field span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .layout-2 .tag-notes { grid-column: span 2; border-top: 1px solid #e5e7eb; padding-top: 10px; margin-top: 10px; overflow: hidden;}
+        .layout-2 .tag-notes p { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .layout-2 .qrcode-container {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 60px; /* Fixed size for QR */
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+
+        .layout-3 .tag-container { /* Card Style (แนวนอน A6) */
+            border: 1px solid #e5e7eb;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative; /* For QR positioning */
+        }
+        .layout-3 .tag-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+        .layout-3 .tag-body div {
+            display: flex;
+            margin-bottom: 4px;
+            overflow: hidden;
+        }
+        .layout-3 .tag-body div span:first-child {
+            font-weight: 600;
+            width: 80px; /* Align labels */
+            flex-shrink: 0;
+        }
+        .layout-3 .tag-body div span:last-child {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .layout-3 .qrcode-container {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 60px; /* Fixed size for QR */
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+
+        .layout-4 .tag-container { /* Clean Minimalist */
+            box-shadow: none;
+            border: none;
+            padding: 0;
+            background-color: transparent;
+            position: relative; /* For QR positioning */
+        }
+        .layout-4 .tag-item {
+            margin-bottom: 5px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .layout-4 .tag-item span:first-child {
+            font-weight: 600;
+        }
+        .layout-4 .qrcode-container {
+            position: absolute;
+            bottom: 0px; /* Adjust as needed */
+            right: 0px; /* Adjust as needed */
+            width: 60px; /* Fixed size for QR */
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+
+        .layout-5 .tag-container { /* Categorized */
+            background-color: #f0f4f8;
+            padding: 15px;
+            border: 1px solid #d1d5db;
+            position: relative; /* For QR positioning */
+        }
+        .layout-5 .category-block {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        .layout-5 .category-title {
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .layout-5 .tag-item {
+            margin-bottom: 4px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .layout-5 .tag-item span:first-child {
+            font-weight: 600;
+        }
+        .layout-5 .qrcode-container {
+            margin-top: 15px; /* Space from last category block */
+            width: 70px; /* Slightly larger QR for visibility */
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+            align-self: center; /* Center horizontally */
+        }
+
+
+        .layout-6 .tag-container { /* Slim Vertical */
+            width: 200px; /* Slimmer default */
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            position: relative; /* For QR positioning */
+        }
+        .layout-6 .tag-header {
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #d1d5db;
+        }
+        .layout-6 .tag-section {
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .layout-6 .tag-section-title {
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            color: #4b5563;
+        }
+        .layout-6 .tag-item {
+            margin-bottom: 4px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .layout-6 p {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .layout-6 .qrcode-container {
+            margin-top: 10px;
+            width: 60px; /* Fixed size for QR */
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+            align-self: center; /* Center horizontally */
+        }
+
+
+        /* Message box styles */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            text-align: center;
+            max-width: 400px;
+        }
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none; /* Hidden by default */
+        }
+
+        /* Print Preview Modal Styles */
+        #printPreviewModalOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1001;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto; /* Allow scrolling for many tags */
+        }
+
+        #printPreviewModal {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1002;
+            width: 95%;
+            max-width: 800px; /* Max width for the modal content */
+            max-height: 95vh; /* Max height to fit screen */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #printPreviewModalHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            background-color: #f9fafb;
+        }
+
+        #printPreviewModalContent {
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto; /* Allow content to scroll */
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 15px; /* Gap between tags in preview */
+        }
+    </style>
+</head>
+<body class="p-6 bg-gray-100 min-h-screen flex flex-col items-center">
+
+    <!-- Message Box HTML -->
+    <div id="messageBoxOverlay" class="message-box-overlay"></div>
+    <div id="messageBox" class="message-box">
+        <p id="messageBoxText" class="text-lg font-medium text-gray-800 mb-6"></p>
+        <button id="messageBoxClose" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+            ตกลง
+        </button>
+    </div>
+
+    <!-- Print Preview Modal -->
+    <div id="printPreviewModalOverlay">
+        <div id="printPreviewModal">
+            <div id="printPreviewModalHeader">
+                <h3 class="text-xl font-semibold text-gray-800">ตัวอย่างก่อนพิมพ์</h3>
+                <button id="printPreviewModalClose" class="text-gray-600 hover:text-gray-900 text-2xl font-bold">
+                    &times;
+                </button>
+            </div>
+            <div id="printPreviewModalContent">
+                <!-- Rendered tags for preview will go here -->
+            </div>
+        </div>
+    </div>
+
+
+    <div class="container mx-auto bg-white p-8 rounded-xl shadow-lg w-full max-w-6xl no-print">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">โปรแกรมสร้างแท็ก Sample</h1>
+
+        <!-- Form Section -->
+        <div id="form-section" class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">ข้อมูลแท็ก</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Left Column: Basic Fields -->
+                <div>
+                    <div class="mb-5">
+                        <label for="tagNo" class="block text-gray-700 text-sm font-medium mb-2">รหัส/เลขอ้างอิง (No. Plate / Tag No.)</label>
+                        <div class="flex items-center space-x-3">
+                            <input type="text" id="tagNo" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" placeholder="เช่น S-024">
+                            <button id="generateRunningNo" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                                สร้าง Running No.
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-5">
+                        <label for="sampleDate" class="block text-gray-700 text-sm font-medium mb-2">วันที่ทำ Sample</label>
+                        <div class="flex items-center space-x-3">
+                            <input type="date" id="sampleDate" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                            <button id="autoDate" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+                                วันที่ปัจจุบัน
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-5">
+                        <label for="colorName" class="block text-gray-700 text-sm font-medium mb-2">สีเบจ (ชื่อสี)</label>
+                        <input type="text" id="colorName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" placeholder="เช่น Beige">
+                    </div>
+                    <!-- Removed HEX color input and picker -->
+
+                    <div class="mb-5">
+                        <label for="sampleMaker" class="block text-gray-700 text-sm font-medium mb-2">ผู้ทำแซมเปิ้ล (ชื่อพนักงาน)</label>
+                        <input type="text" id="sampleMaker" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" placeholder="เช่น นายบุญนำชัย บ.">
+                    </div>
+                </div>
+
+                <!-- Right Column: Film, Top Coat, Notes -->
+                <div>
+                    <div class="mb-5">
+                        <label for="filmType" class="block text-gray-700 text-sm font-medium mb-2">ฟิล์ม (ชนิดฟิล์มที่ใช้)</label>
+                        <input type="text" id="filmType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" placeholder="เช่น PET 12u">
+                    </div>
+
+                    <div class="mb-5">
+                        <label for="topCoat" class="block text-gray-700 text-sm font-medium mb-2">สีท็อปโค้ด (ชนิดและรหัสสี)</label>
+                        <input type="text" id="topCoat" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" placeholder="เช่น Top Coat: White C-12">
+                    </div>
+
+                    <div class="mb-5">
+                        <label for="notes" class="block text-gray-700 text-sm font-medium mb-2">หมายเหตุ (คำอธิบายเสริมสั้นๆ)</label>
+                        <textarea id="notes" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" placeholder="เช่น สำหรับลูกค้า A"></textarea>
+                    </div>
+
+                    <div class="mb-5">
+                        <label for="logoUpload" class="block text-gray-700 text-sm font-medium mb-2">โลโก้บริษัท (อัปโหลดไฟล์)</label>
+                        <input type="file" id="logoUpload" accept="image/*" class="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        <p class="text-sm text-gray-500 mt-2">
+                            โปรดอัปโหลดไฟล์โลโก้ของคุณ (เช่น .png, .jpg) เนื่องจากไม่สามารถเข้าถึงไฟล์จากพาธในเครื่องได้โดยตรง
+                        </p>
+                        <div id="logoPreviewContainer" class="mt-4 hidden">
+                            <p class="text-gray-600 text-sm mb-2">โลโก้ที่เลือก:</p>
+                            <img id="logoPreview" src="#" alt="Logo Preview" class="max-w-xs max-h-24 rounded-lg shadow-md border border-gray-200">
+                            <button id="clearLogo" class="ml-4 px-3 py-1 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                                ล้างโลโก้
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Color Preset Section -->
+            <div class="mt-8">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">การเลือกสีแท็ก</h3>
+                <div class="flex flex-wrap gap-3">
+                    <button class="preset-color-btn px-4 py-2 rounded-lg shadow-md transition duration-200 hover:scale-105" data-preset="default" style="background-color: #ffffff; color: #333333; border: 1px solid #ccc;">
+                        Default
+                    </button>
+                    <button class="preset-color-btn px-4 py-2 rounded-lg shadow-md transition duration-200 hover:scale-105" data-preset="warm-earthy" style="background-color: #F5F5DC; color: #4B3F38;">
+                        Warm Earthy
+                    </button>
+                    <button class="preset-color-btn px-4 py-2 rounded-lg shadow-md transition duration-200 hover:scale-105" data-preset="cool-modern" style="background-color: #E0F2F7; color: #2C5282;">
+                        Cool Modern
+                    </button>
+                    <button class="preset-color-btn px-4 py-2 rounded-lg shadow-md transition duration-200 hover:scale-105" data-preset="vibrant-contrast" style="background-color: #F0F4F8; color: #5F2D6B;">
+                        Vibrant Contrast
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-center mt-8">
+                <button id="createTagBtn" class="px-8 py-4 bg-green-600 text-white text-lg font-semibold rounded-xl hover:bg-green-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 shadow-lg">
+                    สร้างแท็ก
+                </button>
+            </div>
+        </div>
+
+        <!-- Tag Preview Section -->
+        <div id="preview-section" class="hidden">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">ตัวอย่างแท็ก</h2>
+            <div class="flex flex-wrap justify-center gap-4 mb-6">
+                <button class="layout-btn px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200" data-layout="1">Classic Block</button>
+                <button class="layout-btn px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200" data-layout="2">2-Column Modern</button>
+                <button class="layout-btn px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200" data-layout="3">Card Style</button>
+                <button class="layout-btn px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200" data-layout="4">Clean Minimalist</button>
+                <button class="layout-btn px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200" data-layout="5">Categorized</button>
+                <button class="layout-btn px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200" data-layout="6">Slim Vertical</button>
+            </div>
+
+            <div id="tagPreviewArea" class="tag-preview-container mb-8">
+                <!-- Tag preview will be rendered here -->
+            </div>
+
+            <div class="flex justify-center gap-4">
+                <button id="selectLayoutBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                    เลือกอันนี้
+                </button>
+                <button id="backToEditBtn" class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+                    กลับไปแก้ไข
+                </button>
+            </div>
+        </div>
+
+        <!-- Print/Export Section -->
+        <div id="print-export-section" class="hidden">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">ตั้งค่าการพิมพ์ / ส่งออก</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label for="tagWidth" class="block text-gray-700 text-sm font-medium mb-2">ความกว้างแท็ก (mm)</label>
+                    <input type="number" id="tagWidth" value="80" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                </div>
+                <div>
+                    <label for="tagHeight" class="block text-gray-700 text-sm font-medium mb-2">ความสูงแท็ก (mm)</label>
+                    <input type="number" id="tagHeight" value="55" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                    <div class="mt-2 text-sm text-gray-600">
+                        <p class="mb-1">แนะนำความสูง:</p>
+                        <div class="flex gap-2">
+                            <button id="recommendHeightSmall" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200">
+                                เล็ก (<span id="heightSmallVal">35</span>mm)
+                            </button>
+                            <button id="recommendHeightMedium" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200">
+                                กลาง (<span id="heightMediumVal">55</span>mm)
+                            </button>
+                            <button id="recommendHeightLarge" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200">
+                                ใหญ่ (<span id="heightLargeVal">85</span>mm)
+                            </button>
+                        </div>
+                        <p class="mt-2 text-xs text-gray-500">
+                            หากข้อความล้นกรอบ, ลองปรับความสูงของแท็กด้วยตนเอง
+                        </p>
+                    </div>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="tagsPerPage" class="block text-gray-700 text-sm font-medium mb-2">จำนวนแท็กต่อหน้า</label>
+                    <select id="tagsPerPage" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        <option value="1">1 ชิ้นต่อหน้า</option>
+                        <option value="2">2 ชิ้นต่อหน้า</option>
+                        <option value="4">4 ชิ้นต่อหน้า</option>
+                        <option value="6" selected>6 ชิ้นต่อหน้า</option>
+                        <option value="8">8 ชิ้นต่อหน้า</option>
+                    </select>
+                </div>
+
+                <!-- Font Size Adjustment -->
+                <div class="md:col-span-2 mt-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">ขนาดตัวอักษร</label>
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <div class="flex items-center gap-2">
+                            <input type="radio" id="fontSizeAuto" name="fontSizeMode" value="auto" class="form-radio h-4 w-4 text-blue-600" checked>
+                            <label for="fontSizeAuto" class="text-gray-700">อัตโนมัติ:</label>
+                            <button id="fontSizeSmall" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200" data-size="small">เล็ก</button>
+                            <button id="fontSizeMedium" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200" data-size="medium">กลาง</button>
+                            <button id="fontSizeLarge" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200" data-size="large">ใหญ่</button>
+                        </div>
+                        <div class="flex items-center gap-2 ml-4">
+                            <input type="radio" id="fontSizeManual" name="fontSizeMode" value="manual" class="form-radio h-4 w-4 text-blue-600">
+                            <label for="fontSizeManual" class="text-gray-700">กำหนดเอง (px):</label>
+                            <input type="number" id="manualFontSizeInput" value="14" min="8" max="30" class="w-20 p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Include QR Code Option (NEW) -->
+                <div class="md:col-span-2 mt-4 flex items-center">
+                    <input type="checkbox" id="includeQrCode" class="form-checkbox h-5 w-5 text-blue-600 rounded" checked>
+                    <label for="includeQrCode" class="ml-2 text-gray-700 text-sm font-medium">รวม QR Code ในแท็ก</label>
+                </div>
+
+            </div>
+
+            <div class="flex justify-center gap-4 mt-8">
+                <button id="previewPrintBtn" class="px-6 py-3 bg-purple-600 text-white text-lg font-semibold rounded-xl hover:bg-purple-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50 shadow-lg">
+                    ดูตัวอย่างก่อนพิมพ์
+                </button>
+                <button id="printTagBtn" class="px-8 py-4 bg-green-600 text-white text-lg font-semibold rounded-xl hover:bg-green-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 shadow-lg">
+                    พิมพ์แท็ก
+                </button>
+                <button id="backToPreviewBtn" class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+                    กลับไปดูตัวอย่าง
+                </button>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div id="history-section" class="mt-12">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">ประวัติแท็กที่สร้าง</h2>
+            <div id="tagHistoryList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Tag history items will be loaded here -->
+                <p id="noHistoryMessage" class="text-gray-500 text-center col-span-full">ยังไม่มีประวัติแท็กที่สร้าง</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Area (hidden by default, only for printing) -->
+    <div id="print-area" class="hidden"></div>
+
+    <script>
+        // Global variables for managing state
+        let runningNoCounter = parseInt(localStorage.getItem('runningNoCounter')) || 1;
+        let currentLogoUrl = localStorage.getItem('companyLogoUrl') || '';
+
+        // Default colors for the tag
+        const defaultTagColors = {
+            backgroundColor: '#ffffff',
+            textColor: '#333333'
+        };
+
+        // Preset color schemes
+        const presetColorSchemes = {
+            'default': { backgroundColor: '#ffffff', textColor: '#333333' },
+            'warm-earthy': { backgroundColor: '#F5F5DC', textColor: '#4B3F38' },
+            'cool-modern': { backgroundColor: '#E0F2F7', textColor: '#2C5282' },
+            'vibrant-contrast': { backgroundColor: '#F0F4F8', textColor: '#5F2D6B' }
+        };
+
+        let currentTagData = {
+            companyName: "Thai Cubic Technology Co., Ltd.", // Updated company name
+            logoUrl: '',
+            sampleDate: '',
+            tagNo: '',
+            colorName: '',
+            filmType: '',
+            topCoat: '',
+            sampleMaker: '',
+            notes: '',
+            backgroundColor: localStorage.getItem('tagBackgroundColor') || defaultTagColors.backgroundColor,
+            textColor: localStorage.getItem('tagTextColor') || defaultTagColors.textColor,
+            includeQrCode: (localStorage.getItem('includeQrCode') === 'true') // New setting
+        };
+
+        let selectedLayout = 1; // Default layout
+        let tagHistory = JSON.parse(localStorage.getItem('tagHistory')) || [];
+
+        // Font size settings
+        let currentFontSizeMode = localStorage.getItem('fontSizeMode') || 'auto'; // 'auto' or 'manual'
+        let currentAutoFontSize = localStorage.getItem('autoFontSize') || 'medium'; // 'small', 'medium', 'large'
+        let currentManualFontSize = parseInt(localStorage.getItem('manualFontSize')) || 14; // in px
+
+        // DOM Elements
+        const formSection = document.getElementById('form-section');
+        const previewSection = document.getElementById('preview-section');
+        const printExportSection = document.getElementById('print-export-section');
+        const historySection = document.getElementById('history-section');
+
+        const tagNoInput = document.getElementById('tagNo');
+        const generateRunningNoBtn = document.getElementById('generateRunningNo');
+        const sampleDateInput = document.getElementById('sampleDate');
+        const autoDateBtn = document.getElementById('autoDate');
+        const colorNameInput = document.getElementById('colorName');
+        const sampleMakerInput = document.getElementById('sampleMaker');
+        const filmTypeInput = document.getElementById('filmType');
+        const topCoatInput = document.getElementById('topCoat');
+        const notesInput = document.getElementById('notes');
+        const logoUploadInput = document.getElementById('logoUpload');
+        const logoPreviewContainer = document.getElementById('logoPreviewContainer');
+        const logoPreview = document.getElementById('logoPreview');
+        const clearLogoBtn = document.getElementById('clearLogo');
+        const createTagBtn = document.getElementById('createTagBtn');
+
+        const presetColorButtons = document.querySelectorAll('.preset-color-btn'); // New
+
+        const tagPreviewArea = document.getElementById('tagPreviewArea');
+        const layoutButtons = document.querySelectorAll('.layout-btn');
+        const selectLayoutBtn = document.getElementById('selectLayoutBtn');
+        const backToEditBtn = document.getElementById('backToEditBtn');
+
+        const tagWidthInput = document.getElementById('tagWidth');
+        const tagHeightInput = document.getElementById('tagHeight');
+        const tagsPerPageSelect = document.getElementById('tagsPerPage');
+        const previewPrintBtn = document.getElementById('previewPrintBtn');
+        const printTagBtn = document.getElementById('printTagBtn');
+        const backToPreviewBtn = document.getElementById('backToPreviewBtn');
+
+        const recommendHeightSmallBtn = document.getElementById('recommendHeightSmall');
+        const recommendHeightMediumBtn = document.getElementById('recommendHeightMedium');
+        const recommendHeightLargeBtn = document.getElementById('recommendHeightLarge');
+        const heightSmallVal = document.getElementById('heightSmallVal');
+        const heightMediumVal = document.getElementById('heightMediumVal');
+        const heightLargeVal = document.getElementById('heightLargeVal');
+
+        const fontSizeAutoRadio = document.getElementById('fontSizeAuto');
+        const fontSizeManualRadio = document.getElementById('fontSizeManual');
+        const fontSizeSmallBtn = document.getElementById('fontSizeSmall');
+        const fontSizeMediumBtn = document.getElementById('fontSizeMedium');
+        const fontSizeLargeBtn = document.getElementById('fontSizeLarge');
+        const manualFontSizeInput = document.getElementById('manualFontSizeInput');
+
+        const includeQrCodeCheckbox = document.getElementById('includeQrCode'); // NEW QR checkbox
+
+        const tagHistoryList = document.getElementById('tagHistoryList');
+        const noHistoryMessage = document.getElementById('noHistoryMessage');
+
+        const messageBox = document.getElementById('messageBox');
+        const messageBoxOverlay = document.getElementById('messageBoxOverlay');
+        const messageBoxText = document.getElementById('messageBoxText');
+        const messageBoxClose = document.getElementById('messageBoxClose');
+
+        const printPreviewModalOverlay = document.getElementById('printPreviewModalOverlay');
+        const printPreviewModalContent = document.getElementById('printPreviewModalContent');
+        const printPreviewModalClose = document.getElementById('printPreviewModalClose');
+
+        // --- Utility Functions ---
+
+        /**
+         * Displays a custom message box.
+         * @param {string} message - The message to display.
+         */
+        function showMessageBox(message) {
+            messageBoxText.textContent = message;
+            messageBoxOverlay.style.display = 'block';
+            messageBox.style.display = 'block';
+        }
+
+        /**
+         * Hides the custom message box.
+         */
+        function hideMessageBox() {
+            messageBoxOverlay.style.display = 'none';
+            messageBox.style.display = 'none';
+        }
+
+        /**
+         * Formats a date object to DD/MM/YYYY.
+         * @param {Date} date - The date object.
+         * @returns {string} Formatted date string.
+         */
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        /**
+         * Saves the current running number counter to local storage.
+         */
+        function saveRunningNoCounter() {
+            localStorage.setItem('runningNoCounter', runningNoCounter);
+        }
+
+        /**
+         * Saves the current company logo URL to local storage.
+         */
+        function saveCompanyLogoUrl() {
+            localStorage.setItem('companyLogoUrl', currentLogoUrl);
+        }
+
+        /**
+         * Saves the tag history to local storage.
+         */
+        function saveTagHistory() {
+            localStorage.setItem('tagHistory', JSON.stringify(tagHistory));
+        }
+
+        /**
+         * Saves font size settings to local storage.
+         */
+        function saveFontSizeSettings() {
+            localStorage.setItem('fontSizeMode', currentFontSizeMode);
+            localStorage.setItem('autoFontSize', currentAutoFontSize);
+            localStorage.setItem('manualFontSize', currentManualFontSize);
+        }
+
+        /**
+         * Saves tag color settings to local storage.
+         */
+        function saveTagColors() {
+            localStorage.setItem('tagBackgroundColor', currentTagData.backgroundColor);
+            localStorage.setItem('tagTextColor', currentTagData.textColor);
+        }
+
+        /**
+         * Saves QR code inclusion setting to local storage.
+         */
+        function saveIncludeQrCodeSetting() {
+            localStorage.setItem('includeQrCode', currentTagData.includeQrCode);
+        }
+
+        /**
+         * Switches between different sections of the application.
+         * @param {string} sectionId - The ID of the section to show ('form', 'preview', 'print-export').
+         */
+        function showSection(sectionId) {
+            formSection.classList.add('hidden');
+            previewSection.classList.add('hidden');
+            printExportSection.classList.add('hidden');
+
+            if (sectionId === 'form') {
+                formSection.classList.remove('hidden');
+            } else if (sectionId === 'preview') {
+                previewSection.classList.remove('hidden');
+            } else if (sectionId === 'print-export') {
+                printExportSection.classList.remove('hidden');
+                updateRecommendedHeights(); // Update recommendations when entering print section
+                updateFontSizeUI(); // Update font size UI state
+                includeQrCodeCheckbox.checked = currentTagData.includeQrCode; // Update QR checkbox state
+            }
+        }
+
+        /**
+         * Updates the recommended height values.
+         */
+        function updateRecommendedHeights() {
+            // Fixed recommended heights as per user request
+            heightSmallVal.textContent = '35';
+            heightMediumVal.textContent = '55';
+            heightLargeVal.textContent = '85';
+        }
+
+        /**
+         * Updates the font size UI elements based on current settings.
+         */
+        function updateFontSizeUI() {
+            fontSizeAutoRadio.checked = (currentFontSizeMode === 'auto');
+            fontSizeManualRadio.checked = (currentFontSizeMode === 'manual');
+
+            // Highlight auto size buttons
+            [fontSizeSmallBtn, fontSizeMediumBtn, fontSizeLargeBtn].forEach(btn => {
+                if (btn.dataset.size === currentAutoFontSize && currentFontSizeMode === 'auto') {
+                    btn.classList.add('bg-blue-500', 'text-white');
+                    btn.classList.remove('bg-gray-200', 'text-gray-800');
+                } else {
+                    btn.classList.remove('bg-blue-500', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-800');
+                }
+            });
+
+            manualFontSizeInput.value = currentManualFontSize;
+            manualFontSizeInput.disabled = (currentFontSizeMode === 'auto');
+            fontSizeSmallBtn.disabled = (currentFontSizeMode === 'manual');
+            fontSizeMediumBtn.disabled = (currentFontSizeMode === 'manual');
+            fontSizeLargeBtn.disabled = (currentFontSizeMode === 'manual');
+        }
+
+        /**
+         * Applies the selected font size to a given tag element.
+         * @param {HTMLElement} tagElement - The HTML element representing the tag.
+         */
+        function applyFontSizeToTag(tagElement) {
+            // Remove previous font size classes/styles
+            tagElement.style.fontSize = ''; // Clear inline style
+
+            if (currentFontSizeMode === 'auto') {
+                const autoFontSizes = { 'small': 12, 'medium': 14, 'large': 16 }; // in px
+                tagElement.style.fontSize = `${autoFontSizes[currentAutoFontSize]}px`;
+            } else if (currentFontSizeMode === 'manual') {
+                tagElement.style.fontSize = `${currentManualFontSize}px`;
+            }
+
+            // For specific elements that need relative sizing, apply 'em' based on the parent's font-size
+            // This ensures they scale proportionally with the overall tag font size
+            tagElement.querySelectorAll('.text-xs').forEach(el => el.style.fontSize = '0.85em'); // Example adjustment
+            tagElement.querySelectorAll('.text-sm').forEach(el => el.style.fontSize = '1em');
+            tagElement.querySelectorAll('.text-base').forEach(el => el.style.fontSize = '1.15em');
+            tagElement.querySelectorAll('strong').forEach(el => el.style.fontWeight = 'bold'); // Ensure strong is bold
+        }
+
+        /**
+         * Applies the selected background and text colors to a given tag element.
+         * @param {HTMLElement} tagElement - The HTML element representing the tag.
+         * @param {string} bgColor - The background color.
+         * @param {string} textColor - The text color.
+         */
+        function applyColorsToTag(tagElement, bgColor, textColor) {
+            tagElement.style.backgroundColor = bgColor;
+            tagElement.style.color = textColor;
+
+            // Adjust specific elements if their default Tailwind colors conflict
+            tagElement.querySelectorAll('.text-gray-600').forEach(el => el.style.color = textColor);
+            tagElement.querySelectorAll('.text-gray-700').forEach(el => el.style.color = textColor);
+            tagElement.querySelectorAll('.text-gray-800').forEach(el => el.style.color = textColor);
+            tagElement.querySelectorAll('.text-gray-500').forEach(el => el.style.color = textColor);
+
+            // For layout 5, adjust category block background if needed
+            if (tagElement.classList.contains('layout-5')) {
+                tagElement.querySelectorAll('.category-block').forEach(block => {
+                    // Make category blocks slightly different shade or keep white for contrast
+                    block.style.backgroundColor = '#ffffff'; // Always white for inner blocks
+                });
+                tagElement.querySelectorAll('.category-title').forEach(title => {
+                    title.style.color = textColor; // Use main text color for titles
+                    title.style.borderBottomColor = textColor + '33'; // Lighter border
+                });
+            }
+        }
+
+        /**
+         * Generates a QR code for the given data into the specified element.
+         * @param {string} elementId - The ID of the div element to render the QR code into.
+         * @param {object} data - The data object to encode.
+         */
+        function generateQRCode(elementId, data) {
+            const qrcodeDiv = document.getElementById(elementId);
+            if (qrcodeDiv && currentTagData.includeQrCode) { // Only generate if option is enabled
+                qrcodeDiv.innerHTML = ''; // Clear previous QR code
+                const dataToEncode = JSON.stringify({
+                    tagNo: data.tagNo,
+                    sampleDate: data.sampleDate,
+                    colorName: data.colorName,
+                    filmType: data.filmType,
+                    topCoat: data.topCoat,
+                    sampleMaker: data.sampleMaker,
+                    notes: data.notes
+                });
+
+                new QRCode(qrcodeDiv, {
+                    text: dataToEncode,
+                    width: 50,  // Adjust size as needed for placement
+                    height: 50,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                qrcodeDiv.style.display = 'flex'; // Ensure it's visible
+            } else if (qrcodeDiv) {
+                qrcodeDiv.innerHTML = ''; // Clear if disabled
+                qrcodeDiv.style.display = 'none'; // Hide the container
+            }
+        }
+
+
+        // --- Tag Data Handling ---
+
+        /**
+         * Gathers all data from the form inputs.
+         * @returns {object} An object containing all tag data.
+         */
+        function getTagDataFromForm() {
+            return {
+                companyName: "Thai Cubic Technology Co., Ltd.", // Updated company name
+                logoUrl: currentLogoUrl,
+                sampleDate: sampleDateInput.value ? formatDate(new Date(sampleDateInput.value)) : formatDate(new Date()),
+                tagNo: tagNoInput.value.trim() || "N/A",
+                colorName: colorNameInput.value.trim() || "N/A",
+                filmType: filmTypeInput.value.trim() || "N/A",
+                topCoat: topCoatInput.value.trim() || "N/A",
+                sampleMaker: sampleMakerInput.value.trim() || "N/A",
+                notes: notesInput.value.trim() || "",
+                backgroundColor: currentTagData.backgroundColor, // Use current selected color
+                textColor: currentTagData.textColor, // Use current selected color
+                includeQrCode: includeQrCodeCheckbox.checked // Get current QR setting
+            };
+        }
+
+        /**
+         * Populates the form fields with given tag data.
+         * @param {object} data - The tag data to populate.
+         */
+        function populateFormWithTagData(data) {
+            tagNoInput.value = data.tagNo === "N/A" ? "" : data.tagNo;
+            // For date input, we need APAC-MM-DD format
+            if (data.sampleDate && data.sampleDate !== "N/A") {
+                const parts = data.sampleDate.split('/');
+                sampleDateInput.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            } else {
+                sampleDateInput.value = '';
+            }
+            colorNameInput.value = data.colorName === "N/A" ? "" : data.colorName;
+            sampleMakerInput.value = data.sampleMaker === "N/A" ? "" : data.sampleMaker;
+            filmTypeInput.value = data.filmType === "N/A" ? "" : data.filmType;
+            topCoatInput.value = data.topCoat === "N/A" ? "" : data.topCoat;
+            notesInput.value = data.notes;
+
+            currentLogoUrl = data.logoUrl;
+            if (currentLogoUrl) {
+                logoPreview.src = currentLogoUrl;
+                logoPreviewContainer.classList.remove('hidden');
+            } else {
+                logoPreview.src = '#';
+                logoPreviewContainer.classList.add('hidden');
+            }
+
+            // Set currentTagData colors (important for history loading)
+            currentTagData.backgroundColor = data.backgroundColor || defaultTagColors.backgroundColor;
+            currentTagData.textColor = data.textColor || defaultTagColors.textColor;
+            currentTagData.includeQrCode = data.includeQrCode; // Load QR setting
+            includeQrCodeCheckbox.checked = currentTagData.includeQrCode; // Update checkbox
+            highlightActivePresetButton(); // Highlight the button for the loaded color
+        }
+
+        // --- Tag HTML Generation (6 Layouts) ---
+
+        /**
+         * Generates the HTML for a tag based on the selected layout.
+         * @param {object} data - The tag data.
+         * @param {number} layout - The layout type (1-6).
+         * @returns {string} HTML string for the tag.
+         */
+        function generateTagHtml(data, layout) {
+            const logoHtml = data.logoUrl ? `<img src="${data.logoUrl}" alt="Company Logo" class="h-8 max-w-[100px] object-contain rounded-md">` : '';
+            const qrcodeDivId = `qrcode-${data.tagNo}-${Date.now()}`; // Unique ID for each QR code div
+
+            let html = '';
+            switch (layout) {
+                case 1: // Classic Block
+                    html = `
+                        <div class="tag-container layout-1">
+                            <div class="tag-header flex justify-between items-center pb-2 mb-2 border-b border-gray-300">
+                                <div class="flex items-center">
+                                    ${logoHtml}
+                                    <span class="ml-2 font-semibold" style="font-size: 1.1em;">${data.companyName}</span>
+                                </div>
+                                <span style="font-size: 0.85em;">วันที่: ${data.sampleDate}</span>
+                            </div>
+                            <div class="tag-body">
+                                <p class="mb-1"><strong>รหัส:</strong> ${data.tagNo}</p>
+                                <p class="mb-1"><strong>สีเบจ:</strong> ${data.colorName}</p>
+                                <p class="mb-1"><strong>ฟิล์ม:</strong> ${data.filmType}</p>
+                                <p class="mb-1"><strong>ท็อปโค้ด:</strong> ${data.topCoat}</p>
+                                <p class="mb-1"><strong>ผู้ทำ:</strong> ${data.sampleMaker}</p>
+                                ${data.notes ? `<p class="mt-2"><strong>หมายเหตุ:</strong> ${data.notes}</p>` : ''}
+                            </div>
+                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
+                        </div>
+                    `;
+                    break;
+                case 2: // 2-Column Modern
+                    html = `
+                        <div class="tag-container layout-2">
+                            <div class="tag-header flex items-center col-span-2 pb-2 mb-2 border-b border-gray-300">
+                                ${logoHtml}
+                                <span class="ml-2 font-semibold" style="font-size: 1.2em;">${data.companyName}</span>
+                            </div>
+                            <div class="tag-field">
+                                <span style="font-size: 0.85em; color: inherit;">วันที่:</span>
+                                <span style="font-size: 1em; font-weight: medium;">${data.sampleDate}</span>
+                            </div>
+                            <div class="tag-field">
+                                <span style="font-size: 0.85em; color: inherit;">รหัส:</span>
+                                <span style="font-size: 1em; font-weight: medium;">${data.tagNo}</span>
+                            </div>
+                            <div class="tag-field">
+                                <span style="font-size: 0.85em; color: inherit;">สีเบจ:</span>
+                                <span style="font-size: 1em; font-weight: medium;">${data.colorName}</span>
+                            </div>
+                            <div class="tag-field">
+                                <span style="font-size: 0.85em; color: inherit;">ฟิล์ม:</span>
+                                <span style="font-size: 1em; font-weight: medium;">${data.filmType}</span>
+                            </div>
+                            <div class="tag-field">
+                                <span style="font-size: 0.85em; color: inherit;">ท็อปโค้ด:</span>
+                                <span style="font-size: 1em; font-weight: medium;">${data.topCoat}</span>
+                            </div>
+                            <div class="tag-field">
+                                <span style="font-size: 0.85em; color: inherit;">ผู้ทำ:</span>
+                                <span style="font-size: 1em; font-weight: medium;">${data.sampleMaker}</span>
+                            </div>
+                            ${data.notes ? `
+                            <div class="tag-notes col-span-2 pt-2 mt-2 border-t border-gray-300">
+                                <span style="font-size: 0.85em; color: inherit;">หมายเหตุ:</span>
+                                <p style="font-size: 1em;">${data.notes}</p>
+                            </div>
+                            ` : ''}
+                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
+                        </div>
+                    `;
+                    break;
+                case 3: // Card Style (แนวนอน A6)
+                    html = `
+                        <div class="tag-container layout-3 w-[148mm] h-[105mm] flex-none"> <!-- A6 Landscape -->
+                            <div class="tag-header">
+                                <div class="flex items-center">
+                                    ${logoHtml}
+                                    <span class="ml-2 font-semibold" style="font-size: 1.1em;">${data.companyName}</span>
+                                </div>
+                                <div class="text-right">
+                                    <p style="font-size: 1em;">รหัส: ${data.tagNo}</p>
+                                    <p style="font-size: 1em;">วันที่: ${data.sampleDate}</p>
+                                </div>
+                            </div>
+                            <div class="tag-body flex-grow">
+                                <div class="flex items-center mb-1">
+                                    <span class="font-semibold w-24" style="font-size: 1em;">สีเบจ:</span>
+                                    <span style="font-size: 1em;">${data.colorName}</span>
+                                </div>
+                                <div class="flex items-center mb-1">
+                                    <span class="font-semibold w-24" style="font-size: 1em;">ฟิล์ม:</span>
+                                    <span style="font-size: 1em;">${data.filmType}</span>
+                                </div>
+                                <div class="flex items-center mb-1">
+                                    <span class="font-semibold w-24" style="font-size: 1em;">ท็อปโค้ด:</span>
+                                    <span style="font-size: 1em;">${data.topCoat}</span>
+                                </div>
+                                <div class="flex items-center mb-1">
+                                    <span class="font-semibold w-24" style="font-size: 1em;">ผู้ทำ:</span>
+                                    <span style="font-size: 1em;">${data.sampleMaker}</span>
+                                </div>
+                                ${data.notes ? `
+                                <div class="flex items-center mt-2">
+                                    <span class="font-semibold w-24" style="font-size: 1em;">หมายเหตุ:</span>
+                                    <span style="font-size: 1em;">${data.notes}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
+                        </div>
+                    `;
+                    break;
+                case 4: // Clean Minimalist
+                    html = `
+                        <div class="tag-container layout-4">
+                            <div class="tag-item font-semibold mb-2 flex items-center" style="font-size: 1.2em;">
+                                ${logoHtml}
+                                <span class="ml-2">${data.companyName}</span>
+                            </div>
+                            <div class="tag-item">
+                                <span class="font-semibold" style="font-size: 1em;">รหัส:</span> <span style="font-size: 1em;">${data.tagNo}</span>
+                            </div>
+                            <div class="tag-item">
+                                <span class="font-semibold" style="font-size: 1em;">วันที่:</span> <span style="font-size: 1em;">${data.sampleDate}</span>
+                            </div>
+                            <div class="tag-item">
+                                <span class="font-semibold" style="font-size: 1em;">สีเบจ:</span> <span style="font-size: 1em;">${data.colorName}</span>
+                            </div>
+                            <div class="tag-item">
+                                <span class="font-semibold" style="font-size: 1em;">ฟิล์ม:</span> <span style="font-size: 1em;">${data.filmType}</span>
+                            </div>
+                            <div class="tag-item">
+                                <span class="font-semibold" style="font-size: 1em;">ท็อปโค้ด:</span> <span style="font-size: 1em;">${data.topCoat}</span>
+                            </div>
+                            <div class="tag-item">
+                                <span class="font-semibold" style="font-size: 1em;">ผู้ทำ:</span> <span style="font-size: 1em;">${data.sampleMaker}</span>
+                            </div>
+                            ${data.notes ? `
+                            <div class="tag-item mt-2">
+                                <span class="font-semibold" style="font-size: 1em;">หมายเหตุ:</span> <span style="font-size: 1em;">${data.notes}</span>
+                            </div>
+                            ` : ''}
+                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
+                        </div>
+                    `;
+                    break;
+                case 5: // Categorized
+                    html = `
+                        <div class="tag-container layout-5">
+                            <div class="category-block">
+                                <div class="category-title" style="font-size: 1.1em;">บริษัท</div>
+                                <div class="flex items-center">
+                                    ${logoHtml}
+                                    <span class="ml-2 font-medium" style="font-size: 1em;">${data.companyName}</span>
+                                </div>
+                            </div>
+                            <div class="category-block">
+                                <div class="category-title" style="font-size: 1.1em;">รายละเอียด</div>
+                                <div class="tag-item">
+                                    <span class="font-medium" style="font-size: 1em;">รหัส:</span> <span style="font-size: 1em;">${data.tagNo}</span>
+                                </div>
+                                <div class="tag-item">
+                                    <span class="font-medium" style="font-size: 1em;">วันที่:</span> <span style="font-size: 1em;">${data.sampleDate}</span>
+                                </div>
+                            </div>
+                            <div class="category-block">
+                                <div class="category-title" style="font-size: 1.1em;">วัสดุ & สี</div>
+                                <div class="tag-item">
+                                    <span class="font-medium" style="font-size: 1em;">สีเบจ:</span> <span style="font-size: 1em;">${data.colorName}</span>
+                                </div>
+                                <div class="tag-item">
+                                    <span class="font-medium" style="font-size: 1em;">ฟิล์ม:</span> <span style="font-size: 1em;">${data.filmType}</span>
+                                </div>
+                                <div class="tag-item">
+                                    <span class="font-medium" style="font-size: 1em;">ท็อปโค้ด:</span> <span style="font-size: 1em;">${data.topCoat}</span>
+                                </div>
+                            </div>
+                            <div class="category-block">
+                                <div class="category-title" style="font-size: 1.1em;">อื่นๆ</div>
+                                <div class="tag-item">
+                                    <span class="font-medium" style="font-size: 1em;">ผู้ทำ:</span> <span style="font-size: 1em;">${data.sampleMaker}</span>
+                                </div>
+                                ${data.notes ? `
+                                <div class="tag-item">
+                                    <span class="font-medium" style="font-size: 1em;">หมายเหตุ:</span> <span style="font-size: 1em;">${data.notes}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
+                        </div>
+                    `;
+                    break;
+                case 6: // Slim Vertical (สำหรับ A5)
+                    html = `
+                        <div class="tag-container layout-6 w-[105mm] h-[148mm] flex-none"> <!-- A5 Portrait -->
+                            <div class="tag-header">
+                                <p class="font-semibold" style="font-size: 1.2em;">${data.companyName}</p>
+                                ${logoHtml}
+                            </div>
+                            <div class="tag-section">
+                                <p style="font-size: 1em;"><strong>รหัส Sample:</strong> ${data.tagNo}</p>
+                                <p style="font-size: 1em;"><strong>วันที่:</strong> ${data.sampleDate}</p>
+                            </div>
+                            <hr class="border-t border-dashed border-gray-400 my-2">
+                            <div class="tag-section">
+                                <div class="tag-section-title" style="font-size: 1.1em;">--- วัสดุ ---</div>
+                                <p style="font-size: 1em;"><strong>สีเบจ:</strong> ${data.colorName}</p>
+                                <p style="font-size: 1em;"><strong>ฟิล์ม:</strong> ${data.filmType}</p>
+                                <p style="font-size: 1em;"><strong>ท็อปโค้ด:</strong> ${data.topCoat}</p>
+                            </div>
+                            <div class="tag-section">
+                                <p style="font-size: 1em;"><strong>ผู้ทำแซมเปิ้ล:</strong> ${data.sampleMaker}</p>
+                                ${data.notes ? `<p style="font-size: 1em;"><strong>หมายเหตุ:</strong> ${data.notes}</p>` : ''}
+                            </div>
+                            <div id="${qrcodeDivId}" class="qrcode-container" style="${data.includeQrCode ? '' : 'display: none;'}"></div>
+                        </div>
+                    `;
+                    break;
+                default:
+                    html = `<p class="text-red-500">ไม่พบรูปแบบแท็กที่เลือก</p>`;
+            }
+            return { html: html, qrcodeDivId: qrcodeDivId };
+        }
+
+        /**
+         * Renders the current tag data in the preview area with the selected layout.
+         */
+        function renderTagPreview() {
+            const { html, qrcodeDivId } = generateTagHtml(currentTagData, selectedLayout);
+            tagPreviewArea.innerHTML = html;
+            const previewTagElement = tagPreviewArea.querySelector('.tag-container');
+            if (previewTagElement) {
+                applyFontSizeToTag(previewTagElement);
+                applyColorsToTag(previewTagElement, currentTagData.backgroundColor, currentTagData.textColor);
+                generateQRCode(qrcodeDivId, currentTagData); // Generate QR code for preview
+            }
+
+            // Highlight the active layout button
+            layoutButtons.forEach(btn => {
+                if (parseInt(btn.dataset.layout) === selectedLayout) {
+                    btn.classList.add('bg-blue-600', 'text-white');
+                    btn.classList.remove('bg-gray-200', 'text-gray-800');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-800');
+                }
+            });
+        }
+
+        /**
+         * Generates the HTML for all tags to be printed/previewed.
+         * @param {object} tagData - The tag data.
+         * @param {number} layout - The layout type (1-6).
+         * @param {number} numTags - Number of tags per page.
+         * @param {number} tagWidth - Width of each tag in mm.
+         * @param {number} tagHeight - Height of each tag in mm.
+         * @returns {Array<HTMLElement>} Array of HTML elements for print/preview.
+         */
+        function generatePrintableTagElements(tagData, layout, numTags, tagWidth, tagHeight) {
+            const tagElements = [];
+            for (let i = 0; i < numTags; i++) {
+                const { html, qrcodeDivId } = generateTagHtml(tagData, layout);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                const innerTag = tempDiv.firstElementChild; // Get the .tag-container div
+
+                if (innerTag) {
+                    innerTag.style.width = `${tagWidth}mm`;
+                    innerTag.style.height = `${tagHeight}mm`;
+                    innerTag.style.margin = '5mm'; // Spacing between tags for print
+                    innerTag.style.boxShadow = 'none'; // No shadow in print
+                    innerTag.style.border = '1px solid #ccc'; // Ensure border for print
+                    innerTag.style.overflow = 'hidden'; // Prevent content overflow
+                    applyFontSizeToTag(innerTag); // Apply font size to each print tag
+                    applyColorsToTag(innerTag, tagData.backgroundColor, tagData.textColor); // Apply colors for print
+                    tagElements.push({ element: innerTag, qrcodeDivId: qrcodeDivId, data: tagData });
+                }
+            }
+            return tagElements;
+        }
+
+        /**
+         * Renders all tags for actual printing.
+         */
+        function renderTagsForPrintAction() {
+            const numTags = parseInt(tagsPerPageSelect.value);
+            const tagWidth = parseInt(tagWidthInput.value);
+            const tagHeight = parseInt(tagHeightInput.value);
+
+            const printableTags = generatePrintableTagElements(currentTagData, selectedLayout, numTags, tagWidth, tagHeight);
+
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = ''; // Clear previous content
+
+            printableTags.forEach(item => {
+                printArea.appendChild(item.element);
+                // Generate QR code after element is appended to DOM
+                generateQRCode(item.qrcodeDivId, item.data);
+            });
+
+            // Show print area temporarily for printing
+            printArea.classList.remove('hidden');
+            window.print();
+            // Hide print area after print dialog is closed
+            printArea.classList.add('hidden');
+            printArea.innerHTML = ''; // Clear content after printing
+        }
+
+        /**
+         * Shows the print preview modal.
+         */
+        function showPrintPreviewModal() {
+            const numTags = parseInt(tagsPerPageSelect.value);
+            const tagWidth = parseInt(tagWidthInput.value);
+            const tagHeight = parseInt(tagHeightInput.value);
+
+            const previewTags = generatePrintableTagElements(currentTagData, selectedLayout, numTags, tagWidth, tagHeight);
+            printPreviewModalContent.innerHTML = ''; // Clear previous content
+
+            previewTags.forEach(item => {
+                printPreviewModalContent.appendChild(item.element);
+                // Generate QR code after element is appended to DOM
+                generateQRCode(item.qrcodeDivId, item.data);
+            });
+
+            printPreviewModalOverlay.style.display = 'flex'; // Show the modal
+        }
+
+        /**
+         * Hides the print preview modal.
+         */
+        function hidePrintPreviewModal() {
+            printPreviewModalOverlay.style.display = 'none';
+            printPreviewModalContent.innerHTML = ''; // Clear content
+        }
+
+        /**
+         * Highlights the active preset color button based on currentTagData.
+         */
+        function highlightActivePresetButton() {
+            presetColorButtons.forEach(button => {
+                const preset = presetColorSchemes[button.dataset.preset];
+                if (preset && preset.backgroundColor === currentTagData.backgroundColor && preset.textColor === currentTagData.textColor) {
+                    button.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2');
+                } else {
+                    button.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2');
+                }
+            });
+        }
+
+
+        // --- Event Listeners ---
+
+        // Initialize date input with current date
+        sampleDateInput.valueAsDate = new Date();
+
+        // Auto Date button
+        autoDateBtn.addEventListener('click', () => {
+            sampleDateInput.valueAsDate = new Date();
+        });
+
+        // Generate Running No. button
+        generateRunningNoBtn.addEventListener('click', () => {
+            tagNoInput.value = `S-${String(runningNoCounter).padStart(3, '0')}`;
+            runningNoCounter++;
+            saveRunningNoCounter();
+        });
+
+        // Logo Upload
+        logoUploadInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    currentLogoUrl = e.target.result;
+                    logoPreview.src = currentLogoUrl;
+                    logoPreviewContainer.classList.remove('hidden');
+                    saveCompanyLogoUrl();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Clear Logo
+        clearLogoBtn.addEventListener('click', () => {
+            currentLogoUrl = '';
+            logoPreview.src = '#';
+            logoPreviewContainer.classList.add('hidden');
+            logoUploadInput.value = ''; // Clear file input
+            saveCompanyLogoUrl();
+        });
+
+        // Create Tag button
+        createTagBtn.addEventListener('click', () => {
+            currentTagData = getTagDataFromForm();
+            if (!currentTagData.tagNo || currentTagData.tagNo === "N/A") {
+                showMessageBox("กรุณากรอก รหัส/เลขอ้างอิง หรือกด 'สร้าง Running No.'");
+                return;
+            }
+            renderTagPreview();
+            showSection('preview');
+        });
+
+        // Layout selection buttons
+        layoutButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                selectedLayout = parseInt(button.dataset.layout);
+                renderTagPreview();
+            });
+        });
+
+        // Select Layout button
+        selectLayoutBtn.addEventListener('click', () => {
+            // Save the tag to history when a layout is selected
+            const tagToSave = { ...currentTagData, layout: selectedLayout, timestamp: new Date().toISOString() };
+            tagHistory.unshift(tagToSave); // Add to the beginning
+            saveTagHistory();
+            loadTagHistory(); // Refresh history list
+            showSection('print-export');
+        });
+
+        // Back to Edit button
+        backToEditBtn.addEventListener('click', () => {
+            showSection('form');
+        });
+
+        // Preview Print button (NEW)
+        previewPrintBtn.addEventListener('click', showPrintPreviewModal);
+
+        // Print Tag button
+        printTagBtn.addEventListener('click', renderTagsForPrintAction);
+
+        // Back to Preview button
+        backToPreviewBtn.addEventListener('click', () => {
+            showSection('preview');
+        });
+
+        // Close message box
+        messageBoxClose.addEventListener('click', hideMessageBox);
+        messageBoxOverlay.addEventListener('click', hideMessageBox); // Close on overlay click
+
+        // Close print preview modal
+        printPreviewModalClose.addEventListener('click', hidePrintPreviewModal);
+        printPreviewModalOverlay.addEventListener('click', (event) => {
+            if (event.target === printPreviewModalOverlay) { // Only close if clicking on the overlay, not the modal itself
+                hidePrintPreviewModal();
+            }
+        });
+
+
+        // --- Height Recommendation Listeners ---
+        // tagWidthInput.addEventListener('input', updateRecommendedHeights); // No longer needed as heights are fixed
+
+        recommendHeightSmallBtn.addEventListener('click', () => {
+            tagHeightInput.value = heightSmallVal.textContent;
+        });
+        recommendHeightMediumBtn.addEventListener('click', () => {
+            tagHeightInput.value = heightMediumVal.textContent;
+        });
+        recommendHeightLargeBtn.addEventListener('click', () => {
+            tagHeightInput.value = heightLargeVal.textContent;
+        });
+
+        // --- Font Size Listeners ---
+        fontSizeAutoRadio.addEventListener('change', () => {
+            currentFontSizeMode = 'auto';
+            saveFontSizeSettings();
+            updateFontSizeUI();
+            renderTagPreview();
+        });
+
+        fontSizeManualRadio.addEventListener('change', () => {
+            currentFontSizeMode = 'manual';
+            saveFontSizeSettings();
+            updateFontSizeUI();
+            renderTagPreview();
+        });
+
+        fontSizeSmallBtn.addEventListener('click', () => {
+            currentAutoFontSize = 'small';
+            saveFontSizeSettings();
+            updateFontSizeUI();
+            renderTagPreview();
+        });
+        fontSizeMediumBtn.addEventListener('click', () => {
+            currentAutoFontSize = 'medium';
+            saveFontSizeSettings();
+            updateFontSizeUI();
+            renderTagPreview();
+        });
+        fontSizeLargeBtn.addEventListener('click', () => {
+            currentAutoFontSize = 'large';
+            saveFontSizeSettings();
+            updateFontSizeUI();
+            renderTagPreview();
+        });
+
+        manualFontSizeInput.addEventListener('input', () => {
+            const size = parseInt(manualFontSizeInput.value);
+            if (!isNaN(size) && size >= 8 && size <= 30) {
+                currentManualFontSize = size;
+                saveFontSizeSettings();
+                renderTagPreview();
+            }
+        });
+
+        // --- Preset Color Listeners (NEW) ---
+        presetColorButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const presetName = button.dataset.preset;
+                const colors = presetColorSchemes[presetName];
+                if (colors) {
+                    currentTagData.backgroundColor = colors.backgroundColor;
+                    currentTagData.textColor = colors.textColor;
+                    saveTagColors();
+                    renderTagPreview();
+                    highlightActivePresetButton(); // Update button highlight
+                }
+            });
+        });
+
+        // --- QR Code Option Listener (NEW) ---
+        includeQrCodeCheckbox.addEventListener('change', () => {
+            currentTagData.includeQrCode = includeQrCodeCheckbox.checked;
+            saveIncludeQrCodeSetting();
+            renderTagPreview(); // Re-render preview to show/hide QR
+        });
+
+
+        // --- History Management ---
+
+        /**
+         * Loads and displays the tag history from local storage.
+         */
+        function loadTagHistory() {
+            if (tagHistory.length === 0) {
+                noHistoryMessage.classList.remove('hidden');
+                tagHistoryList.innerHTML = ''; // Clear existing list
+                tagHistoryList.appendChild(noHistoryMessage);
+                return;
+            }
+            noHistoryMessage.classList.add('hidden');
+            tagHistoryList.innerHTML = ''; // Clear previous history items
+
+            tagHistory.forEach((tag, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-between';
+                historyItem.innerHTML = `
+                    <p class="text-sm font-medium text-gray-700 mb-2">รหัส: <span class="font-semibold">${tag.tagNo}</span></p>
+                    <p class="text-xs text-gray-500 mb-2">วันที่: ${tag.sampleDate}</p>
+                    <p class="text-xs text-gray-500 mb-4">ผู้ทำ: ${tag.sampleMaker}</p>
+                    <div class="flex justify-between items-center mt-auto">
+                        <button class="view-history-btn px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition duration-200" data-index="${index}">
+                            ดู/พิมพ์ซ้ำ
+                        </button>
+                        <button class="delete-history-btn px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition duration-200" data-index="${index}">
+                            ลบ
+                        </button>
+                    </div>
+                `;
+                tagHistoryList.appendChild(historyItem);
+            });
+
+            // Add event listeners for new history buttons
+            document.querySelectorAll('.view-history-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const index = parseInt(event.target.dataset.index);
+                    const historicalTag = tagHistory[index];
+                    currentTagData = { ...historicalTag }; // Load data
+                    selectedLayout = historicalTag.layout || 1; // Load layout
+                    populateFormWithTagData(currentTagData); // Populate form for editing
+                    renderTagPreview(); // Show preview
+                    showSection('preview');
+                });
+            });
+
+            document.querySelectorAll('.delete-history-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const index = parseInt(event.target.dataset.index);
+                    tagHistory.splice(index, 1); // Remove from array
+                    saveTagHistory(); // Save updated history
+                    loadTagHistory(); // Refresh display
+                    showMessageBox("ลบแท็กจากประวัติแล้ว");
+                });
+            });
+        }
+
+        // Initial load of history and logo on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTagHistory();
+            if (currentLogoUrl) {
+                logoPreview.src = currentLogoUrl;
+                logoPreviewContainer.classList.remove('hidden');
+            }
+            // Set default date
+            sampleDateInput.valueAsDate = new Date();
+            updateRecommendedHeights(); // Initial call to set recommended heights
+            updateFontSizeUI(); // Initial call to set font size UI state
+            highlightActivePresetButton(); // Highlight default/saved preset
+            includeQrCodeCheckbox.checked = currentTagData.includeQrCode; // Set initial QR checkbox state
+        });
+
+    </script>
+</body>
+</html>
